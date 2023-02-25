@@ -1,7 +1,7 @@
 FROM golang:1.20.1-alpine as base
 WORKDIR /root/
 
-RUN apk add git
+RUN apk add git ca-certificates
 
 COPY go.mod go.sum ./
 RUN go mod download
@@ -31,7 +31,12 @@ LABEL org.opencontainers.image.description="With the OpenSlides ICC Service clie
 LABEL org.opencontainers.image.licenses="MIT"
 LABEL org.opencontainers.image.source="https://github.com/OpenSlides/openslides-icc-service"
 
+# Copy CA root certificates
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+
+# Copy binary
 COPY --from=builder /root/openslides-icc-service .
+
 EXPOSE 9007
 ENTRYPOINT ["/openslides-icc-service"]
 HEALTHCHECK CMD ["/openslides-icc-service", "health"]
