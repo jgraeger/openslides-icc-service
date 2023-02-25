@@ -27,6 +27,7 @@ var (
 	envICCServicePort = environment.NewVariable("ICC_PORT", "9007", "Port on which the service listen on.")
 	envICCRedisHost   = environment.NewVariable("ICC_REDIS_HOST", "localhost", "The host of the redis instance to save icc messages.")
 	envICCRedisPort   = environment.NewVariable("ICC_REDIS_PORT", "6379", "The port of the redis instance to save icc messages.")
+	envICCRedisDSN    = environment.NewVariable("ICC_REDIS_DSN", "", "Redis connection URL")
 )
 
 var cli struct {
@@ -116,7 +117,7 @@ func initService(lookup environment.Environmenter) (func(context.Context) error,
 	authService, authBackground := auth.New(lookup, messageBus)
 	backgroundTasks = append(backgroundTasks, authBackground)
 
-	backend := redis.New(envICCRedisHost.Value(lookup) + ":" + envICCRedisPort.Value(lookup))
+	backend := initRedis(lookup)
 
 	notifyService, notifyBackground := notify.New(backend)
 	backgroundTasks = append(backgroundTasks, notifyBackground)
@@ -135,6 +136,14 @@ func initService(lookup environment.Environmenter) (func(context.Context) error,
 	}
 
 	return service, nil
+}
+
+func initRedis(lookup environment.Environmenter) *redis.Redis {
+	if envICCRedisDSN.Value(lookup) != "" {
+		return redis.NewByURL(envICCRedisDSN.Value(lookup))
+	}
+
+	return redis.New(envICCRedisHost.Value(lookup) + ":" + envICCRedisPort.Value(lookup))
 }
 
 // Run starts a webserver

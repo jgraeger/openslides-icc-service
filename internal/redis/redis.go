@@ -27,12 +27,24 @@ type Redis struct {
 
 // New creates a new initializes redis instance.
 func New(addr string) *Redis {
+	return new(func() (redis.Conn, error) {
+		return redis.Dial("tcp", addr)
+	})
+}
+
+func NewByURL(url string) *Redis {
+	return new(func() (redis.Conn, error) {
+		return redis.DialURL(url)
+	})
+}
+
+func new(dial func() (redis.Conn, error)) *Redis {
 	pool := redis.Pool{
 		MaxActive:   100,
 		Wait:        true,
 		MaxIdle:     10,
 		IdleTimeout: 240 * time.Second,
-		Dial:        func() (redis.Conn, error) { return redis.Dial("tcp", addr) },
+		Dial:        dial,
 	}
 
 	return &Redis{
