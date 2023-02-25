@@ -32,6 +32,7 @@ func New(addr string) *Redis {
 	})
 }
 
+// NewByURL creates a new redis instance by a connection string DSN.
 func NewByURL(url string) *Redis {
 	return new(func() (redis.Conn, error) {
 		return redis.DialURL(url)
